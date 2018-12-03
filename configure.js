@@ -11,8 +11,6 @@ const generate = (serviceName, moduleName, config) => {
   const servicePath = `${__dirname}/../../services/${serviceName}.js`;
   const configDir = `${__dirname}/../../config`;
   const configPath = `${__dirname}/../../config/${serviceName}.yml`;
-  const resourceBaseDir = `${__dirname}/../../res`;
-  const resourceDir = `${__dirname}/../../res/${serviceName}`;
 
   console.log("");
   console.log(`${serviceName} service config:`);
@@ -35,16 +33,6 @@ const generate = (serviceName, moduleName, config) => {
   }
   if (!fs.existsSync(servicePath)) {
     fs.writeFileSync(servicePath, `module.exports = require('${moduleName}')`);
-  }
-  
-  // ensure resource dir exist
-  console.log(`creating resources folder: ${resourceDir}`);
-  if (!fs.existsSync(resourceBaseDir)) {
-    fs.mkdirSync(resourceBaseDir, {recursive: true});
-  }
-  if (!fs.existsSync(resourceDir)) {
-    fs.mkdirSync(resourceDir, {recursive: true});
-    fs.writeFileSync(`${resourceDir}/.gitkeep`, '');
   }
 };
 
