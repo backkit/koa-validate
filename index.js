@@ -1,3 +1,4 @@
+//module.exports = require('@backkit/koa-validate');
 /**
  * Validator wrapper
  */
@@ -25,7 +26,8 @@ class Validator {
     const params = this.params;
     const _validate = this.getValidator(ns, name);
     if (_validate) {
-      return await _validate(value, params);
+      const fullParams = [value].concat(params);
+      return await _validate.apply(null, fullParams);
     }
     this.logger.error(`validator "${ns}/${name}" not found`);
     return false;
@@ -80,7 +82,7 @@ class ValidationGroup {
   }
 
   pushValidator(ns, name, params) {
-    const val = new Validator(this, ns, name, params||{}, {getValidator: this.getValidator, logger: this.logger});
+    const val = new Validator(this, ns, name, params||[], {getValidator: this.getValidator, logger: this.logger});
     this.validatorChain.push(val);
     return this;
   }
@@ -146,13 +148,20 @@ const KoaValidate = ({koa, validator, logger}) => {
     };
 
     // runs validate
-    ctx.validate = async () => {
+    ctx.validate = async (terminate) => {
+      if (terminate === undefined) terminate = true;
       logger.verbose(`koa-validate: started`);
       for (group of ctx.__requestValidators) {
         const res = await group.execValidationChain();
         if (res !== true) {
-          logger.verbose(`koa-validate: blocked`);
-          ctx.throw(400, res);
+          if (terminate === true) {
+            logger.verbose(`koa-validate: invalid (blocked)`);
+            ctx.throw(400, res); 
+          } else {
+            logger.verbose(`koa-validate: invalid`);
+            ctx.validationError = res;
+            return false;
+          }
         }
       }
       logger.verbose(`koa-validate: passed`);
